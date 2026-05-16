@@ -1,0 +1,342 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>מנהל משימות - Task Manager</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body {
+            direction: rtl;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        .priority-high {
+            background-color: #fee2e2;
+            border-left: 4px solid #dc2626;
+        }
+        
+        .priority-medium {
+            background-color: #fef3c7;
+            border-left: 4px solid #f59e0b;
+        }
+        
+        .priority-low {
+            background-color: #dbeafe;
+            border-left: 4px solid #3b82f6;
+        }
+        
+        .task-completed {
+            opacity: 0.6;
+        }
+        
+        .task-completed .task-title {
+            text-decoration: line-through;
+        }
+        
+        .fade-in {
+            animation: fadeIn 0.3s ease-in;
+        }
+        
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(-10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+    </style>
+</head>
+<body class="bg-gradient-to-br from-blue-50 to-indigo-100 min-h-screen p-4">
+    <div class="max-w-4xl mx-auto">
+        <!-- Header -->
+        <div class="text-center mb-8 pt-6">
+            <h1 class="text-4xl font-bold text-gray-800 mb-2">📋 מנהל המשימות שלי</h1>
+            <p class="text-gray-600">ארגן את משימותיך בקלות וביעילות</p>
+        </div>
+        
+        <!-- Add Task Form -->
+        <div class="bg-white rounded-lg shadow-lg p-6 mb-6">
+            <h2 class="text-2xl font-bold text-gray-800 mb-4">➕ הוסף משימה חדשה</h2>
+            <form id="taskForm" class="space-y-4">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">כותרת המשימה</label>
+                        <input type="text" id="taskTitle" placeholder="לדוגמה: לכתוב דו״ח" 
+                               class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                               required>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">תאריך יעד</label>
+                        <input type="date" id="taskDate" 
+                               class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    </div>
+                </div>
+                
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">עדיפות</label>
+                        <select id="taskPriority" 
+                                class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                            <option value="low">🟢 נמוכה</option>
+                            <option value="medium" selected>🟡 בינונית</option>
+                            <option value="high">🔴 גבוהה</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">תיאור (אופציונלי)</label>
+                        <input type="text" id="taskDescription" placeholder="פרטים נוספים על המשימה" 
+                               class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    </div>
+                </div>
+                
+                <button type="submit" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-lg transition duration-200">
+                    ➕ הוסף משימה
+                </button>
+            </form>
+        </div>
+        
+        <!-- Search and Filter -->
+        <div class="bg-white rounded-lg shadow-lg p-6 mb-6">
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">🔍 חיפוש</label>
+                    <input type="text" id="searchBox" placeholder="חפש משימה..." 
+                           class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                </div>
+                
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">סינון</label>
+                    <select id="filterBtn" 
+                            class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                        <option value="all">📋 הכל</option>
+                        <option value="active">⏳ פעילות</option>
+                        <option value="completed">✅ הושלמו</option>
+                    </select>
+                </div>
+                
+                <div class="flex items-end">
+                    <button id="clearCompleted" class="w-full bg-red-500 hover:bg-red-600 text-white font-bold py-2 rounded-lg transition duration-200">
+                        🗑️ מחק הושלמות
+                    </button>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Stats -->
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+            <div class="bg-white rounded-lg shadow p-4 text-center">
+                <div class="text-3xl font-bold text-blue-600" id="totalTasks">0</div>
+                <div class="text-gray-600 text-sm">סה״כ משימות</div>
+            </div>
+            <div class="bg-white rounded-lg shadow p-4 text-center">
+                <div class="text-3xl font-bold text-orange-600" id="activeTasks">0</div>
+                <div class="text-gray-600 text-sm">משימות פעילות</div>
+            </div>
+            <div class="bg-white rounded-lg shadow p-4 text-center">
+                <div class="text-3xl font-bold text-green-600" id="completedTasks">0</div>
+                <div class="text-gray-600 text-sm">משימות הושלמות</div>
+            </div>
+        </div>
+        
+        <!-- Tasks List -->
+        <div id="tasksContainer" class="space-y-3">
+            <div class="text-center py-12 bg-white rounded-lg shadow-lg">
+                <p class="text-gray-500 text-lg">אין משימות כרגע. הוסף משימה חדשה!</p>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        // Initialize App
+        class TaskManager {
+            constructor() {
+                this.tasks = this.loadTasks();
+                this.currentFilter = 'all';
+                this.currentSearch = '';
+                this.setupEventListeners();
+                this.render();
+            }
+            
+            setupEventListeners() {
+                document.getElementById('taskForm').addEventListener('submit', (e) => this.addTask(e));
+                document.getElementById('searchBox').addEventListener('input', (e) => this.handleSearch(e));
+                document.getElementById('filterBtn').addEventListener('change', (e) => this.handleFilter(e));
+                document.getElementById('clearCompleted').addEventListener('click', () => this.clearCompleted());
+            }
+            
+            loadTasks() {
+                const saved = localStorage.getItem('tasks');
+                return saved ? JSON.parse(saved) : [];
+            }
+            
+            saveTasks() {
+                localStorage.setItem('tasks', JSON.stringify(this.tasks));
+            }
+            
+            addTask(e) {
+                e.preventDefault();
+                
+                const title = document.getElementById('taskTitle').value.trim();
+                const description = document.getElementById('taskDescription').value.trim();
+                const date = document.getElementById('taskDate').value;
+                const priority = document.getElementById('taskPriority').value;
+                
+                if (!title) return;
+                
+                const task = {
+                    id: Date.now(),
+                    title,
+                    description,
+                    date,
+                    priority,
+                    completed: false,
+                    createdAt: new Date().toLocaleDateString('he-IL')
+                };
+                
+                this.tasks.unshift(task);
+                this.saveTasks();
+                this.render();
+                
+                // Reset form
+                document.getElementById('taskForm').reset();
+                document.getElementById('taskPriority').value = 'medium';
+            }
+            
+            deleteTask(id) {
+                this.tasks = this.tasks.filter(t => t.id !== id);
+                this.saveTasks();
+                this.render();
+            }
+            
+            toggleTask(id) {
+                const task = this.tasks.find(t => t.id === id);
+                if (task) {
+                    task.completed = !task.completed;
+                    this.saveTasks();
+                    this.render();
+                }
+            }
+            
+            handleSearch(e) {
+                this.currentSearch = e.target.value.toLowerCase();
+                this.render();
+            }
+            
+            handleFilter(e) {
+                this.currentFilter = e.target.value;
+                this.render();
+            }
+            
+            clearCompleted() {
+                this.tasks = this.tasks.filter(t => !t.completed);
+                this.saveTasks();
+                this.render();
+            }
+            
+            getFilteredTasks() {
+                let filtered = this.tasks;
+                
+                // Filter by status
+                if (this.currentFilter === 'active') {
+                    filtered = filtered.filter(t => !t.completed);
+                } else if (this.currentFilter === 'completed') {
+                    filtered = filtered.filter(t => t.completed);
+                }
+                
+                // Filter by search
+                if (this.currentSearch) {
+                    filtered = filtered.filter(t => 
+                        t.title.toLowerCase().includes(this.currentSearch) ||
+                        t.description.toLowerCase().includes(this.currentSearch)
+                    );
+                }
+                
+                return filtered;
+            }
+            
+            updateStats() {
+                const total = this.tasks.length;
+                const active = this.tasks.filter(t => !t.completed).length;
+                const completed = this.tasks.filter(t => t.completed).length;
+                
+                document.getElementById('totalTasks').textContent = total;
+                document.getElementById('activeTasks').textContent = active;
+                document.getElementById('completedTasks').textContent = completed;
+            }
+            
+            getPriorityEmoji(priority) {
+                const emojis = { high: '🔴', medium: '🟡', low: '🟢' };
+                return emojis[priority] || '🟡';
+            }
+            
+            getPriorityText(priority) {
+                const texts = { high: 'גבוהה', medium: 'בינונית', low: 'נמוכה' };
+                return texts[priority] || 'בינונית';
+            }
+            
+            formatDate(dateStr) {
+                if (!dateStr) return '';
+                const date = new Date(dateStr + 'T00:00:00');
+                return date.toLocaleDateString('he-IL');
+            }
+            
+            render() {
+                this.updateStats();
+                const filtered = this.getFilteredTasks();
+                const container = document.getElementById('tasksContainer');
+                
+                if (filtered.length === 0) {
+                    container.innerHTML = `
+                        <div class="text-center py-12 bg-white rounded-lg shadow-lg">
+                            <p class="text-gray-500 text-lg">${this.tasks.length === 0 ? 'אין משימות כרגע. הוסף משימה חדשה!' : 'לא נמצאו משימות התואמות.'}</p>
+                        </div>
+                    `;
+                    return;
+                }
+                
+                container.innerHTML = filtered.map(task => `
+                    <div class="fade-in priority-${task.priority} ${task.completed ? 'task-completed' : ''} bg-white rounded-lg shadow-lg p-5 hover:shadow-xl transition">
+                        <div class="flex items-start gap-4">
+                            <input type="checkbox" ${task.completed ? 'checked' : ''} 
+                                   onchange="taskManager.toggleTask(${task.id})"
+                                   class="w-6 h-6 mt-1 cursor-pointer text-blue-600 rounded focus:ring-2 focus:ring-blue-500">
+                            
+                            <div class="flex-1">
+                                <div class="flex items-center gap-2 mb-2">
+                                    <span class="text-lg task-title font-semibold text-gray-800">${this.escapeHtml(task.title)}</span>
+                                    <span class="text-sm px-2 py-1 bg-gray-100 rounded">${this.getPriorityEmoji(task.priority)} ${this.getPriorityText(task.priority)}</span>
+                                </div>
+                                
+                                ${task.description ? `<p class="text-gray-600 text-sm mb-2">${this.escapeHtml(task.description)}</p>` : ''}
+                                
+                                <div class="flex flex-wrap gap-3 text-xs text-gray-500">
+                                    ${task.date ? `<span>📅 ${this.formatDate(task.date)}</span>` : ''}
+                                    <span>➕ ${task.createdAt}</span>
+                                </div>
+                            </div>
+                            
+                            <button onclick="taskManager.deleteTask(${task.id})" 
+                                    class="bg-red-500 hover:bg-red-600 text-white px-3 py-2 rounded transition duration-200 flex-shrink-0">
+                                🗑️ מחק
+                            </button>
+                        </div>
+                    </div>
+                `).join('');
+            }
+            
+            escapeHtml(text) {
+                const div = document.createElement('div');
+                div.textContent = text;
+                return div.innerHTML;
+            }
+        }
+        
+        // Start the app
+        const taskManager = new TaskManager();
+    </script>
+</body>
+</html>
